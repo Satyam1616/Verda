@@ -1,0 +1,76 @@
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+  --secondary: #6366f1;
+  --bg-main: #f8fafc;
+  --sidebar-bg: #1e293b;
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --card-shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: #1e293b;
+  overflow-x: hidden;
+}
+
+.sidebar-link {
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-link.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-left: 4px solid var(--primary);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.loader {
+  border: 2px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 2px solid var(--primary);
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
