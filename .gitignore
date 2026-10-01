@@ -9,3 +9,6 @@ logs/
 # local data store / build output
 rayeva-data.json
 dist/
+
+.vercel
+.env*

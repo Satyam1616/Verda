@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { CategoryTagGenerator } from './modules/category-tag-generator/index.js';
 import { B2BProposalGenerator } from './modules/b2b-proposal-generator/index.js';
@@ -15,7 +16,16 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+
+// Resolve the static frontend dir robustly across local dev and serverless
+// bundling (where cwd is /var/task and public/ is shipped via includeFiles).
+const publicDirCandidates = [
+  path.join(__dirname, '../public'),
+  path.join(process.cwd(), 'public'),
+];
+const publicDir =
+  publicDirCandidates.find((p) => fs.existsSync(p)) ?? publicDirCandidates[0];
+app.use(express.static(publicDir));
 
 const categoryGenerator = new CategoryTagGenerator();
 const proposalGenerator = new B2BProposalGenerator();
