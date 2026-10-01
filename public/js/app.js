@@ -4,12 +4,16 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   setupTabs();
+  setupTheme();
   animateStats();
   initCatalog();
   initProposal();
   initImpact();
   initSupport();
 });
+
+const ACTIVE = ["bg-brand-soft", "dark:bg-brand/15", "text-brand"];
+const INACTIVE = ["text-neutral-500", "hover:text-neutral-900", "dark:hover:text-neutral-100"];
 
 function setupTabs() {
   const buttons = document.querySelectorAll(".tab-btn");
@@ -18,15 +22,23 @@ function setupTabs() {
     sections.forEach((s) => s.classList.toggle("hidden", s.id !== id));
     buttons.forEach((b) => {
       const on = b.dataset.target === id;
-      b.classList.toggle("active", on);
-      b.style.color = on ? "" : "var(--muted)";
+      ACTIVE.forEach((c) => b.classList.toggle(c, on));
+      INACTIVE.forEach((c) => b.classList.toggle(c, !on));
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
   buttons.forEach((b) => b.addEventListener("click", () => show(b.dataset.target)));
-  document.querySelectorAll("[data-go]").forEach((el) =>
-    el.addEventListener("click", () => show(el.dataset.go))
-  );
+  document.querySelectorAll("[data-go]").forEach((el) => el.addEventListener("click", () => show(el.dataset.go)));
+  show("overview");
+}
+
+function setupTheme() {
+  const btn = document.getElementById("theme-toggle");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const dark = document.documentElement.classList.toggle("dark");
+    try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
+  });
 }
 
 function animateStats() {
@@ -77,9 +89,9 @@ function initCatalog() {
       document.getElementById("catalog-primary").textContent = r.primaryCategory || "—";
       document.getElementById("catalog-sub").textContent = r.subCategory || "—";
       document.getElementById("catalog-filters").innerHTML = (r.sustainabilityFilters || [])
-        .map((f) => `<span class="chip chip-accent"><i class="fas fa-check"></i> ${f}</span>`).join("");
+        .map((f) => `<span class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">✓ ${f}</span>`).join("");
       document.getElementById("catalog-tags").innerHTML = (r.seoTags || [])
-        .map((t) => `<span class="chip">#${t}</span>`).join("");
+        .map((t) => `<span class="text-xs font-medium px-2.5 py-1 rounded-lg bg-brand-soft text-brand border border-brand/15 dark:bg-brand/15">#${t}</span>`).join("");
       document.getElementById("catalog-result-empty").classList.add("hidden");
       document.getElementById("catalog-result-content").classList.remove("hidden");
     } catch (err) { fail("catalog", err.message); }
@@ -98,19 +110,31 @@ function initProposal() {
       const r = await postJSON("/api/generate-proposal", data);
       document.getElementById("proposal-summary").textContent = r.impactPositioningSummary || "";
       document.getElementById("proposal-fit").textContent = r.clientFitExplanation || "";
-      document.getElementById("proposal-products").innerHTML = (r.productMix || []).map((p) => `
-        <tr class="border-t" style="border-color: var(--border)">
-          <td class="py-2.5 pr-3"><div class="font-medium">${p.name}</div><div class="text-xs" style="color: var(--muted)">${p.description || ""}</div></td>
-          <td class="py-2.5 pr-3">${p.quantity}</td>
-          <td class="py-2.5 pr-3 font-medium">$${p.unitCost}</td>
-          <td class="py-2.5"><span class="chip chip-accent">${p.sustainabilityScore}/10</span></td>
-        </tr>`).join("");
+      document.getElementById("proposal-products").innerHTML = (r.productMix || []).map((p) => {
+        // Model may return the sustainability score on a 0–10 or 0–100 scale; normalise to 0–10.
+        const raw = Number(p.sustainabilityScore) || 0;
+        const outOf10 = raw > 10 ? Math.round(raw / 10) : raw;
+        const pct = Math.max(0, Math.min(100, raw > 10 ? raw : raw * 10));
+        return `
+        <tr class="border-t border-neutral-200 dark:border-neutral-800 align-top">
+          <td class="py-2.5 pr-3"><div class="font-medium">${p.name}</div><div class="text-xs text-neutral-500">${p.description || ""}</div></td>
+          <td class="py-2.5 pr-3 tabular-nums">${p.quantity}</td>
+          <td class="py-2.5 pr-3 font-medium tabular-nums">$${p.unitCost}</td>
+          <td class="py-2.5">
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden"><div class="h-full bg-brand" style="width:${pct}%"></div></div>
+              <span class="text-xs font-medium text-neutral-500 tabular-nums">${outOf10}/10</span>
+            </div>
+          </td>
+        </tr>`;
+      }).join("");
       const b = r.budgetAllocation || {};
+      const money = (n) => "$" + Number(n ?? 0).toLocaleString();
       document.getElementById("proposal-budget").innerHTML = `
-        <div class="flex justify-between py-1"><span style="color: var(--muted)">Products</span><span class="font-medium">$${b.totalProductCost ?? 0}</span></div>
-        <div class="flex justify-between py-1"><span style="color: var(--muted)">Logistics</span><span class="font-medium">$${b.logisticsCost ?? 0}</span></div>
-        <div class="flex justify-between py-1"><span style="color: var(--muted)">Contingency</span><span class="font-medium">$${b.contingency ?? 0}</span></div>
-        <div class="flex justify-between pt-2 mt-1 border-t" style="border-color: var(--border)"><span class="font-semibold">Estimated total</span><span class="font-semibold text-lg" style="color: var(--primary)">$${b.totalEstimatedBudget ?? 0}</span></div>`;
+        <div class="flex justify-between py-1"><span class="text-neutral-500">Products</span><span class="font-medium tabular-nums">${money(b.totalProductCost)}</span></div>
+        <div class="flex justify-between py-1"><span class="text-neutral-500">Logistics</span><span class="font-medium tabular-nums">${money(b.logisticsCost)}</span></div>
+        <div class="flex justify-between py-1"><span class="text-neutral-500">Contingency</span><span class="font-medium tabular-nums">${money(b.contingency)}</span></div>
+        <div class="flex justify-between pt-2 mt-1 border-t border-neutral-200 dark:border-neutral-800"><span class="font-semibold">Estimated total</span><span class="font-semibold text-lg text-brand tabular-nums">${money(b.totalEstimatedBudget)}</span></div>`;
       document.getElementById("proposal-result-empty").classList.add("hidden");
       document.getElementById("proposal-result-content").classList.remove("hidden");
     } catch (err) { fail("proposal", err.message); }
@@ -149,10 +173,10 @@ function initSupport() {
   const bubble = (role, text) => {
     const wrap = document.createElement("div");
     wrap.className = `flex ${role === "user" ? "justify-end" : "justify-start"} animate-fade-in`;
-    const base = role === "user"
-      ? "background: var(--primary); color:#fff; border-top-right-radius:4px"
-      : "background:#fff; color: var(--fg); border:1px solid var(--border); border-top-left-radius:4px";
-    wrap.innerHTML = `<div class="rounded-2xl px-3.5 py-2.5 max-w-[80%] text-sm" style="${base}">${text}</div>`;
+    const cls = role === "user"
+      ? "bg-brand text-white rounded-2xl rounded-tr-sm"
+      : "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700 rounded-2xl rounded-tl-sm";
+    wrap.innerHTML = `<div class="${cls} px-3.5 py-2.5 max-w-[80%] text-sm">${text}</div>`;
     win.appendChild(wrap);
     win.scrollTop = win.scrollHeight;
   };
@@ -170,8 +194,7 @@ function initSupport() {
         bubble("bot", r.response);
         if (r.reasoning) {
           const log = document.createElement("div");
-          log.className = "rounded-lg p-2.5 text-[11px] font-mono animate-fade-in";
-          log.style.cssText = "background: var(--surface-muted); color: var(--muted); border:1px solid var(--border)";
+          log.className = "rounded-lg p-2.5 text-[11px] font-mono bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 border border-neutral-200 dark:border-neutral-800 animate-fade-in break-words";
           log.textContent = r.reasoning;
           logs.prepend(log);
         }
