@@ -5,3 +5,7 @@ rayeva.db
 logs/
 *.log
 .DS_Store
+
+# local data store / build output
+rayeva-data.json
+dist/

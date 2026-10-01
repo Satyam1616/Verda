@@ -1,31 +1,27 @@
 {
-  "name": "rayeva-world-pvt-ltd",
+  "name": "rayeva-ai-systems",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "tsx src/server.ts",
     "demo": "tsx src/index.ts",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "AI product-catalog tagging and B2B proposal generation, powered by Groq.",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.5",
-    "better-sqlite3": "^12.6.2",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "winston": "^3.19.0",
     "zod": "^4.3.6"
   },
-  "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "tsx": "^4.21.0"
-  }
+  "devDependencies": {}
 }

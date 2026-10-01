@@ -105,6 +105,16 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  logger.info(`Rayeva AI Server running at http://localhost:${port}`);
-});
+// Start a standalone server only when run directly (local dev / `npm start`).
+// When imported by a serverless entry (e.g. Vercel), we just export the app.
+const isDirectRun =
+  process.argv[1] && import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`;
+
+if (isDirectRun || process.env.FORCE_LISTEN === '1') {
+  app.listen(port, () => {
+    logger.info(`Rayeva AI Server running at http://localhost:${port}`);
+  });
+}
+
+export default app;
+

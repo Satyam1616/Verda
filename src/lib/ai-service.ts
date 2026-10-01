@@ -1,24 +1,34 @@
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import dotenv from 'dotenv';
 import logger from './logger.js';
 import db from './db.js';
 
 dotenv.config();
 
-const apiKey = process.env.GOOGLE_API_KEY || 'MOCK_API_KEY';
-const genAI = new GoogleGenerativeAI(apiKey);
+/**
+ * Groq-backed AI service.
+ *
+ * Groq exposes an OpenAI-compatible Chat Completions endpoint, so we call it
+ * directly with fetch (no SDK dependency). Structured output is enforced via
+ * `response_format: json_schema`, with the schema the callers already pass in.
+ * If no key is configured, the service transparently falls back to deterministic
+ * mock responses so the demo always runs.
+ */
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 export class AIService {
-  private model: any;
+  private model: string;
+  private apiKey: string | undefined;
   private isMockMode: boolean = false;
 
-  constructor(modelName: string = 'gemini-flash-latest') {
-    const key = process.env.GOOGLE_API_KEY;
+  constructor(modelName: string = DEFAULT_MODEL) {
+    this.model = modelName;
+    const key = process.env.GROQ_API_KEY;
     if (!key || key === 'your_actual_api_key_here' || key.startsWith('MOCK')) {
-      logger.warn('Warning: Using mock mode. No valid Google API key found.');
+      logger.warn('Warning: Using mock mode. No valid GROQ_API_KEY found.');
       this.isMockMode = true;
     }
-    this.model = genAI.getGenerativeModel({ model: modelName });
+    this.apiKey = key;
   }
 
   private logToDb(context: string, prompt: string, response: string) {
@@ -44,24 +54,75 @@ export class AIService {
 
     try {
       logger.info('Starting AI generation', { context, promptLength: prompt.length });
-      const result = await this.model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: responseSchema,
+
+      const res = await fetch(GROQ_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0.4,
+          messages: [
+            {
+              role: 'system',
+              content:
+                'You are a precise assistant that always replies with a single ' +
+                'valid JSON object matching the requested schema. No prose, no markdown.',
+            },
+            { role: 'user', content: prompt },
+          ],
+          response_format: {
+            type: 'json_schema',
+            json_schema: {
+              name: context || 'structured_output',
+              schema: this.normalizeSchema(responseSchema),
+            },
+          },
+        }),
       });
 
-      const response = result.response;
-      const text = response.text();
-      
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Groq API ${res.status}: ${errText}`);
+      }
+
+      const payload = await res.json();
+      const text: string = payload.choices?.[0]?.message?.content ?? '';
+
       this.logToDb(context, prompt, text);
       logger.info('AI generation successful', { context });
       return JSON.parse(text) as T;
     } catch (error) {
       logger.error('Error in AI generation', { error, context });
-      throw new Error(`AI generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `AI generation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
+  }
+
+  /**
+   * The modules were written against Gemini's loose schema shape. JSON-Schema
+   * (which Groq/OpenAI use) wants `additionalProperties: false` and `required`
+   * on objects for strict mode. This recursively hardens the schema so strict
+   * structured output succeeds.
+   */
+  private normalizeSchema(schema: any): any {
+    if (!schema || typeof schema !== 'object') return schema;
+    const out: any = Array.isArray(schema) ? [] : { ...schema };
+
+    if (out.type === 'object' && out.properties) {
+      out.additionalProperties = false;
+      if (!out.required) out.required = Object.keys(out.properties);
+      for (const k of Object.keys(out.properties)) {
+        out.properties[k] = this.normalizeSchema(out.properties[k]);
+      }
+    }
+    if (out.type === 'array' && out.items) {
+      out.items = this.normalizeSchema(out.items);
+    }
+    return out;
   }
 
   private getMockResponse(context: string): any {
@@ -73,7 +134,7 @@ export class AIService {
         sustainabilityFilters: ['plastic-free', 'compostable', 'biodegradable']
       };
     }
-    
+
     if (context === 'B2BProposalGenerator') {
       return {
         productMix: [

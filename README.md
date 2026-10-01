@@ -19,8 +19,8 @@ The system follows a **Modular Clean Architecture** with a clear separation betw
 
 ### Core Components
 
-- **`AIService`**: A generic wrapper around Google's Gemini-1.5-Flash model, handling structured JSON output generation, logging (to SQLite), and error handling.
-- **`Database (SQLite)`**: A persistent storage layer for product analysis, B2B proposals, and AI transaction logs.
+- **`AIService`**: A generic wrapper around **Groq** (OpenAI-compatible Chat Completions), handling structured JSON output generation (via `response_format: json_schema`), logging, and error handling. Falls back to deterministic mock responses when no API key is set.
+- **`Database`**: A lightweight, dependency-free data store (in-memory with best-effort JSON persistence) for product analysis, B2B proposals, and AI transaction logs — runs identically on a laptop or a serverless function.
 - **`Logger`**: A centralized Winston-based logging service for tracking system events.
 
 ### Modules Implemented
@@ -74,7 +74,7 @@ Our prompts are designed for **Structured Output Generation** using LLMs. Key de
 
 - Node.js (v18+)
 - NPM
-- A Google Gemini API Key (Optional for running the code, but required for actual AI generation).
+- A Groq API key (optional for running the code, but required for live AI generation — a free key is available at https://console.groq.com).
 
 ### Installation
 
@@ -85,7 +85,7 @@ Our prompts are designed for **Structured Output Generation** using LLMs. Key de
    ```
 3. Create a `.env` file in the root:
    ```env
-   GOOGLE_API_KEY=your_actual_api_key_here
+   GROQ_API_KEY=your_groq_key_here
    ```
 
 ### Running the Demo
@@ -93,8 +93,21 @@ Our prompts are designed for **Structured Output Generation** using LLMs. Key de
 The demo showcases both implemented modules with sample data.
 
 ```bash
-npx ts-node src/index.ts
+npm run demo
 ```
+
+### Running the Web App
+
+Starts the Express server with the dashboard UI and REST API:
+
+```bash
+npm start        # http://localhost:3000
+```
+
+### Deploying
+
+Ships with `vercel.json` and a serverless entry (`api/index.ts`) so it deploys
+to Vercel as-is. Set `GROQ_API_KEY` as a project environment variable.
 
 ---
 

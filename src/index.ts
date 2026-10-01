@@ -1,6 +1,6 @@
-import { CategoryTagGenerator } from './modules/category-tag-generator';
-import { B2BProposalGenerator } from './modules/b2b-proposal-generator';
-import logger from './lib/logger';
+import { CategoryTagGenerator } from './modules/category-tag-generator/index.js';
+import { B2BProposalGenerator } from './modules/b2b-proposal-generator/index.js';
+import logger from './lib/logger.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
