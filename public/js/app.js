@@ -5,7 +5,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   setupTabs();
   setupTheme();
-  animateStats();
   initCatalog();
   initProposal();
   initImpact();
@@ -13,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 const ACTIVE = ["bg-brand-soft", "dark:bg-brand/15", "text-brand"];
-const INACTIVE = ["text-neutral-500", "hover:text-neutral-900", "dark:hover:text-neutral-100"];
+const INACTIVE = ["text-stone-500", "hover:text-stone-900", "dark:hover:text-stone-100"];
 
 function setupTabs() {
   const buttons = document.querySelectorAll(".tab-btn");
@@ -39,14 +38,6 @@ function setupTheme() {
     const dark = document.documentElement.classList.toggle("dark");
     try { localStorage.setItem("theme", dark ? "dark" : "light"); } catch (e) {}
   });
-}
-
-function animateStats() {
-  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-  set("stat-proposals", "124");
-  set("stat-products", "850");
-  set("stat-impact", "4.2t");
-  set("stat-logs", "1,042");
 }
 
 function loading(mod, on, label) {
@@ -116,14 +107,14 @@ function initProposal() {
         const outOf10 = raw > 10 ? Math.round(raw / 10) : raw;
         const pct = Math.max(0, Math.min(100, raw > 10 ? raw : raw * 10));
         return `
-        <tr class="border-t border-neutral-200 dark:border-neutral-800 align-top">
-          <td class="py-2.5 pr-3"><div class="font-medium">${p.name}</div><div class="text-xs text-neutral-500">${p.description || ""}</div></td>
+        <tr class="border-t border-stone-200 dark:border-stone-800 align-top">
+          <td class="py-2.5 pr-3"><div class="font-medium">${p.name}</div><div class="text-xs text-stone-500">${p.description || ""}</div></td>
           <td class="py-2.5 pr-3 tabular-nums">${p.quantity}</td>
           <td class="py-2.5 pr-3 font-medium tabular-nums">$${p.unitCost}</td>
           <td class="py-2.5">
             <div class="flex items-center gap-2">
-              <div class="flex-1 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden"><div class="h-full bg-brand" style="width:${pct}%"></div></div>
-              <span class="text-xs font-medium text-neutral-500 tabular-nums">${outOf10}/10</span>
+              <div class="flex-1 h-1.5 rounded-full bg-stone-200 dark:bg-stone-700 overflow-hidden"><div class="h-full bg-brand" style="width:${pct}%"></div></div>
+              <span class="text-xs font-medium text-stone-500 tabular-nums">${outOf10}/10</span>
             </div>
           </td>
         </tr>`;
@@ -131,10 +122,10 @@ function initProposal() {
       const b = r.budgetAllocation || {};
       const money = (n) => "$" + Number(n ?? 0).toLocaleString();
       document.getElementById("proposal-budget").innerHTML = `
-        <div class="flex justify-between py-1"><span class="text-neutral-500">Products</span><span class="font-medium tabular-nums">${money(b.totalProductCost)}</span></div>
-        <div class="flex justify-between py-1"><span class="text-neutral-500">Logistics</span><span class="font-medium tabular-nums">${money(b.logisticsCost)}</span></div>
-        <div class="flex justify-between py-1"><span class="text-neutral-500">Contingency</span><span class="font-medium tabular-nums">${money(b.contingency)}</span></div>
-        <div class="flex justify-between pt-2 mt-1 border-t border-neutral-200 dark:border-neutral-800"><span class="font-semibold">Estimated total</span><span class="font-semibold text-lg text-brand tabular-nums">${money(b.totalEstimatedBudget)}</span></div>`;
+        <div class="flex justify-between py-1"><span class="text-stone-500">Products</span><span class="font-medium tabular-nums">${money(b.totalProductCost)}</span></div>
+        <div class="flex justify-between py-1"><span class="text-stone-500">Logistics</span><span class="font-medium tabular-nums">${money(b.logisticsCost)}</span></div>
+        <div class="flex justify-between py-1"><span class="text-stone-500">Contingency</span><span class="font-medium tabular-nums">${money(b.contingency)}</span></div>
+        <div class="flex justify-between pt-2 mt-1 border-t border-stone-200 dark:border-stone-800"><span class="font-semibold">Estimated total</span><span class="font-semibold text-lg text-brand tabular-nums">${money(b.totalEstimatedBudget)}</span></div>`;
       document.getElementById("proposal-result-empty").classList.add("hidden");
       document.getElementById("proposal-result-content").classList.remove("hidden");
     } catch (err) { fail("proposal", err.message); }
@@ -175,7 +166,7 @@ function initSupport() {
     wrap.className = `flex ${role === "user" ? "justify-end" : "justify-start"} animate-fade-in`;
     const cls = role === "user"
       ? "bg-brand text-white rounded-2xl rounded-tr-sm"
-      : "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-200 dark:border-neutral-700 rounded-2xl rounded-tl-sm";
+      : "bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-700 rounded-2xl rounded-tl-sm";
     wrap.innerHTML = `<div class="${cls} px-3.5 py-2.5 max-w-[80%] text-sm">${text}</div>`;
     win.appendChild(wrap);
     win.scrollTop = win.scrollHeight;
@@ -194,7 +185,7 @@ function initSupport() {
         bubble("bot", r.response);
         if (r.reasoning) {
           const log = document.createElement("div");
-          log.className = "rounded-lg p-2.5 text-[11px] font-mono bg-neutral-50 dark:bg-neutral-800/60 text-neutral-500 border border-neutral-200 dark:border-neutral-800 animate-fade-in break-words";
+          log.className = "rounded-lg p-2.5 text-[11px] font-mono bg-stone-50 dark:bg-stone-800/60 text-stone-500 border border-stone-200 dark:border-stone-800 animate-fade-in break-words";
           log.textContent = r.reasoning;
           logs.prepend(log);
         }

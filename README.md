@@ -1,120 +1,82 @@
-# AI Systems Assignment
+# Verda
 
-## Project Overview
+**AI product studio for commerce teams.** Turn a plain product description into store-ready catalog data and client-ready proposals in seconds.
 
-This project implements AI-powered modules as part of the AI Systems Assignment. It provides a comprehensive dashboard to manage catalog categorization and B2B proposal generation.
-
-### Objectives
-
-- Automate catalog management (Module 1).
-- Streamline B2B proposal generation (Module 2).
-- Provide environmental impact insights (Module 3 - Architecture only).
-- Enhance customer support via WhatsApp (Module 4 - Architecture only).
+🔗 **Live:** https://ai-systems-mocha.vercel.app
 
 ---
 
-## Architecture Overview
+## What it does
 
-The system follows a **Modular Clean Architecture** with a clear separation between AI logic and business logic.
+Verda is a small suite of AI tools for the repetitive content work behind an online store:
 
-### Core Components
+| Tool | What you give it | What you get back |
+|---|---|---|
+| **Catalog Intelligence** | A product name, description and materials | Primary category, sub-category, 5–10 SEO tags and product attributes |
+| **Proposal Builder** | A company, budget and brief | A product mix, line-item budget breakdown and a positioning summary |
+| **Impact Snapshot** | An order | A sustainability estimate (plastic saved, carbon avoided) with a shareable narrative |
+| **Support Copilot** | A customer message | Detected intent, a drafted reply and refund escalation when needed |
 
-- **`AIService`**: A generic wrapper around **Groq** (OpenAI-compatible Chat Completions), handling structured JSON output generation (via `response_format: json_schema`), logging, and error handling. Falls back to deterministic mock responses when no API key is set.
-- **`Database`**: A lightweight, dependency-free data store (in-memory with best-effort JSON persistence) for product analysis, B2B proposals, and AI transaction logs — runs identically on a laptop or a serverless function.
-- **`Logger`**: A centralized Winston-based logging service for tracking system events.
-
-### Modules Implemented
-
-#### 1. AI Auto-Category & Tag Generator
-
-- **Goal**: Reduce manual effort in product cataloging.
-- **Implementation**: Analyzes product name, description, and materials to assign a primary category from a predefined list, suggest sub-categories, generate 5-10 SEO tags, and identify sustainability filters (e.g., plastic-free, vegan).
-- **Storage**: Automatically stores the generated analysis in the `products` database table.
-- **Location**: `src/modules/category-tag-generator/`
-
-#### 2. AI B2B Proposal Generator
-
-- **Goal**: Automate the creation of sustainable product proposals for corporate clients.
-- **Implementation**: Takes a company name, budget, and sustainability goals to suggest a product mix, calculate a detailed budget breakdown (products, logistics, contingency), and provide an "Impact Positioning Summary."
-- **Storage**: Automatically stores the generated proposal in the `proposals` database table.
-- **Location**: `src/modules/b2b-proposal-generator/`
+Catalog Intelligence and Proposal Builder are backed by a live LLM returning **schema-validated JSON**. Impact Snapshot and Support Copilot are deterministic demos that show the intended architecture.
 
 ---
 
-## AI Prompt Design Explanation
+## Architecture
 
-Our prompts are designed for **Structured Output Generation** using LLMs. Key design principles:
+A **modular clean architecture** with AI logic separated from business logic.
 
-1. **Role-Based Persona**: Every prompt begins by assigning a specific persona (e.g., "Expert B2B Sustainable Commerce Consultant") to ground the AI's reasoning.
-2. **Contextual Constraints**: We provide explicit constraints, such as predefined categories for Module 1 or budget limits for Module 2, to ensure the AI operates within business boundaries.
-3. **Structured JSON Output**: Instead of free-form text, we enforce a JSON schema in the prompt and use the AI SDK's `responseMimeType: 'application/json'` to guarantee machine-readable outputs.
-4. **Prompt & Response Logging**: Every AI interaction (prompt + JSON response) is logged in the `ai_logs` database table for auditability and future fine-tuning.
+- **`AIService`** (`src/lib/ai-service.ts`) — a model-agnostic wrapper over an OpenAI-compatible Chat Completions API. It enforces structured output with `response_format: json_schema`, hardens the schema for strict mode, and logs every call. If no API key is set it falls back to deterministic mock responses, so the app always runs.
+- **Modules** (`src/modules/*`) — each tool is a self-contained module depending only on the generic `AIService` contract.
+- **Data store** (`src/lib/db.ts`) — a dependency-free in-memory store with best-effort JSON persistence; runs identically on a laptop or a serverless function.
+- **Server** (`src/server.ts`) — an Express app exposing the REST API and the static front-end; exports the app so it also runs as a Vercel serverless function (`api/index.ts`).
 
----
-
-## Remaining Modules: Architecture Blueprints
-
-### Module 3: AI Impact Reporting Generator
-
-- **Architecture**: A hybrid system where deterministic business logic calculates raw metrics (plastic saved, carbon avoided, local sourcing impact) based on product data, and AI is used to craft a compelling, human-readable narrative.
-- **Storage**: Reports are stored in the `OrderImpact` table, linked to the specific Order ID.
-- **See**: `src/modules/impact-reporting/architecture.md` for details.
-
-### Module 4: AI WhatsApp Support Bot
-
-- **Architecture**: An event-driven system using webhooks to receive user messages. It uses AI for **Intent Discovery** (e.g., "Where is my order?"), **Information Synthesis** (combining real database order data with natural language responses), and **Escalation Logic** for refund or high-priority issues.
-- **Logging**: All WhatsApp conversations are logged in the `ChatHistory` table.
-- **See**: `src/modules/whatsapp-bot/architecture.md` for details.
+The front-end is a single static page (`public/`) with a tabbed workspace and a light/dark theme.
 
 ---
 
-## Setup & Running the Demo
+## Tech stack
 
-### Prerequisites
+| Layer | Choice |
+|---|---|
+| Language | TypeScript (ESM, strict) |
+| Server | Express 5 |
+| AI | OpenAI-compatible Chat Completions, structured JSON output |
+| Validation | Zod + JSON-schema strict mode |
+| Front-end | Static HTML + Tailwind, no framework |
+| Deploy | Vercel (serverless) |
 
-- Node.js (v18+)
-- NPM
-- A Groq API key (optional for running the code, but required for live AI generation — a free key is available at https://console.groq.com).
+---
 
-### Installation
-
-1. Clone the repository.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file in the root:
-   ```env
-   GROQ_API_KEY=your_groq_key_here
-   ```
-
-### Running the Demo
-
-The demo showcases both implemented modules with sample data.
+## Run locally
 
 ```bash
-npm run demo
+npm install
+cp .env.example .env     # add your API key
+npm start                # http://localhost:3000
 ```
 
-### Running the Web App
+`npm run demo` runs the two live modules against sample data in the terminal.
 
-Starts the Express server with the dashboard UI and REST API:
+### Environment
 
-```bash
-npm start        # http://localhost:3000
+```env
+GROQ_API_KEY=your_key_here      # OpenAI-compatible key
+GROQ_MODEL=openai/gpt-oss-120b  # optional override
 ```
 
-### Deploying
-
-Ships with `vercel.json` and a serverless entry (`api/index.ts`) so it deploys
-to Vercel as-is. Set `GROQ_API_KEY` as a project environment variable.
+Without a key the app runs in mock mode so the UI still works end-to-end.
 
 ---
 
-## Evaluation Criteria Alignment
+## API
 
-- **Structured AI Outputs**: All modules return validated JSON objects.
-- **Business Logic Grounding**: AI outputs are constrained by predefined lists and budget limits.
-- **Clean Architecture**: Decoupled AI service, centralized logging, and modular structure.
-- **Practical Usefulness**: Directly addresses manual bottlenecks in B2B/B2C commerce.
-- **Creativity & Reasoning**: Uses advanced prompt engineering to synthesize complex proposals and impact filters.
+| Endpoint | Body | Returns |
+|---|---|---|
+| `POST /api/generate-tags` | `{ name, description, materials[] }` | `{ primaryCategory, subCategory, seoTags[], sustainabilityFilters[] }` |
+| `POST /api/generate-proposal` | `{ companyName, budgetLimit, numberOfProducts, ... }` | `{ productMix[], budgetAllocation, impactPositioningSummary, clientFitExplanation }` |
+| `POST /api/generate-impact` | `{ orderId, orderDetails }` | `{ plasticSaved, carbonAvoided, localSourcing, impactStatement }` |
+| `POST /api/chat` | `{ message }` | `{ response, reasoning, escalate }` |
+
+---
+
+Built by Satyam Jha.

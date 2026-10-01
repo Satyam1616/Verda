@@ -1,5 +1,5 @@
 {
-  "name": "rayeva-ai-systems",
+  "name": "verda",
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
@@ -10,9 +10,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Satyam Jha",
   "license": "ISC",
-  "description": "AI product-catalog tagging and B2B proposal generation, powered by Groq.",
+  "description": "Verda — AI product studio for commerce teams: catalog tagging, B2B proposals, impact snapshots and a support copilot.",
   "dependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.5",
